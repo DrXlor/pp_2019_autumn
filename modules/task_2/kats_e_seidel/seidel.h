@@ -9,6 +9,7 @@
 #define TYPE_B 2
 
 std::vector<double> randMatrix(int n, int type);
+bool norm(std::vector<double> x, std::vector<double> p, double eps);
 std::vector<double> seidel_solve(std::vector<double> A, std::vector<double> B,
                                  int n, double eps);
 std::vector<double> seidel_solve_s(std::vector<double> A, std::vector<double> B,

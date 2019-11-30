@@ -42,6 +42,16 @@ std::vector<double> randMatrix(int n, int type) {
   return result;
 }
 
+bool norm(std::vector<double> x, std::vector<double> p, double eps) {
+  double norm = 0.0;
+
+  for (int i = 0; i < x.size(); i++) {
+    norm += std::pow(x[i] - p[i], 2);
+  }
+
+  return std::sqrt(norm) < eps;
+}
+
 std::vector<double> seidel_solve(std::vector<double> A, std::vector<double> B,
                                  int n, double eps) {
   if (n < 0) {
@@ -68,7 +78,7 @@ std::vector<double> seidel_solve(std::vector<double> A, std::vector<double> B,
   std::vector<double> x(n);
   std::vector<double> p(n);
 
-  double norm = 0.0;
+  bool check;
   do {
     for (int i = 0; i < n; i++) {
       p[i] = x[i];
@@ -102,11 +112,11 @@ std::vector<double> seidel_solve(std::vector<double> A, std::vector<double> B,
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Bcast(&x[0], n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-    norm = 0;
-    for (int i = 0; i < n; i++) {
-      norm += std::pow(x[i] - p[i], 2);
+    if (rank == 0) {
+      check = !norm(x, p, eps);
     }
-  } while (!(std::sqrt(norm) < eps));
+    MPI_Bcast(&check, 1, MPI_C_BOOL, 0, MPI_COMM_WORLD);
+  } while (check);
 
   return x;
 }
@@ -120,7 +130,6 @@ std::vector<double> seidel_solve_s(std::vector<double> A, std::vector<double> B,
   std::vector<double> x(n);
   std::vector<double> p(n);
 
-  double norm = 0;
   do {
     for (int i = 0; i < n; i++) {
       p[i] = x[i];
@@ -139,12 +148,7 @@ std::vector<double> seidel_solve_s(std::vector<double> A, std::vector<double> B,
 
       x[i] = (B[i] - var) / A[i * n + i];
     }
-
-    norm = 0;
-    for (int i = 0; i < n; i++) {
-      norm += std::pow(x[i] - p[i], 2);
-    }
-  } while (!(std::sqrt(norm) < eps));
+  } while (!norm(x, p, eps));
 
   return x;
 }

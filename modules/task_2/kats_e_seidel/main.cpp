@@ -3,9 +3,9 @@
 #include <gtest/gtest.h>
 #include <mpi.h>
 
-#include <gtest-mpi-listener.hpp>
-#include <vector>
 #include <cmath>
+#include <vector>
+#include <gtest-mpi-listener.hpp>
 
 #include "./seidel.h"
 
@@ -13,17 +13,21 @@ TEST(SEIDEL_METHOD, SLAE_SIZE_4) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  std::vector<double> A(randMatrix(4, TYPE_A));
-  std::vector<double> B(randMatrix(4, TYPE_B));
-  std::vector<double> x(seidel_solve(A, B, 4, .0000001));
+  std::vector<double> A(4 * 4);
+  std::vector<double> B(4);
+  if (rank == 0) {
+    A = randMatrix(4, TYPE_A);
+    B = randMatrix(4, TYPE_B);
+  }
+  MPI_Bcast(&A[0], 4 * 4, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&B[0], 4, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+  std::vector<double> x(seidel_solve(A, B, 4, 1e-6));
 
   if (rank == 0) {
-    std::vector<double> exp(seidel_solve_s(A, B, 4, .0000001));
-    bool check = true;
-    for (int i = 0; i < 4; i++) {
-      std::abs(x[i] - exp[i]) <= .0000001 ? check = true : check = false;
-    }
-    ASSERT_EQ(check, true);
+    std::vector<double> exp(seidel_solve_s(A, B, 4, 1e-6));
+
+    ASSERT_EQ(norm(x, exp, 1e-5), true);
   }
 }
 
@@ -31,17 +35,21 @@ TEST(SEIDEL_METHOD, SLAE_SIZE_20) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  std::vector<double> A(randMatrix(20, TYPE_A));
-  std::vector<double> B(randMatrix(20, TYPE_B));
-  std::vector<double> x(seidel_solve(A, B, 20, .0000001));
+  std::vector<double> A(20 * 20);
+  std::vector<double> B(20);
+  if (rank == 0) {
+    A = randMatrix(20, TYPE_A);
+    B = randMatrix(20, TYPE_B);
+  }
+  MPI_Bcast(&A[0], 20 * 20, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&B[0], 20, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+  std::vector<double> x(seidel_solve(A, B, 20, 1e-6));
 
   if (rank == 0) {
-    std::vector<double> exp(seidel_solve_s(A, B, 20, .0000001));
-    bool check = true;
-    for (int i = 0; i < 20; i++) {
-      std::abs(x[i] - exp[i]) <= .0000001 ? check = true : check = false;
-    }
-    ASSERT_EQ(check, true);
+    std::vector<double> exp(seidel_solve_s(A, B, 20, 1e-6));
+
+    ASSERT_EQ(norm(x, exp, 1e-5), true);
   }
 }
 
@@ -49,17 +57,21 @@ TEST(SEIDEL_METHOD, SLAE_SIZE_600) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  std::vector<double> A(randMatrix(600, TYPE_A));
-  std::vector<double> B(randMatrix(600, TYPE_B));
-  std::vector<double> x(seidel_solve(A, B, 600, .0000001));
+  std::vector<double> A(600 * 600);
+  std::vector<double> B(600);
+  if (rank == 0) {
+    A = randMatrix(600, TYPE_A);
+    B = randMatrix(600, TYPE_B);
+  }
+  MPI_Bcast(&A[0], 600 * 600, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&B[0], 600, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+  std::vector<double> x(seidel_solve(A, B, 600, 1e-6));
 
   if (rank == 0) {
-    std::vector<double> exp(seidel_solve_s(A, B, 600, .0000001));
-    bool check = true;
-    for (int i = 0; i < 600; i++) {
-      std::abs(x[i] - exp[i]) <= .0000001 ? check = true : check = false;
-    }
-    ASSERT_EQ(check, true);
+    std::vector<double> exp(seidel_solve_s(A, B, 600, 1e-6));
+
+    ASSERT_EQ(norm(x, exp, 1e-5), true);
   }
 }
 
@@ -69,7 +81,7 @@ TEST(SEIDEL_METHOD, SOLVE_PARLL) {
 
   std::vector<double> A{2, 1, 1, 3, 5, 2, 2, 1, 4};
   std::vector<double> B{5, 15, 8};
-  std::vector<double> x(seidel_solve(A, B, 3, .001));
+  std::vector<double> x(seidel_solve(A, B, 3, 1e-6));
 
   if (rank == 0) {
     std::vector<double> exp{1, 2, 1};
@@ -88,7 +100,7 @@ TEST(SEIDEL_METHOD, SOLVE_SEQ) {
   if (rank == 0) {
     std::vector<double> A{2, 1, 1, 3, 5, 2, 2, 1, 4};
     std::vector<double> B{5, 15, 8};
-    std::vector<double> x(seidel_solve_s(A, B, 3, .001));
+    std::vector<double> x(seidel_solve_s(A, B, 3, 1e-6));
     std::vector<double> exp{1, 2, 1};
 
     for (auto&& elem : x) {
