@@ -45,7 +45,7 @@ std::vector<double> randMatrix(int n, int type) {
 bool norm(std::vector<double> x, std::vector<double> p, double eps) {
   double norm = 0.0;
 
-  for (int i = 0; i < x.size(); i++) {
+  for (int i = 0; i < (signed)x.size(); i++) {
     norm += std::pow(x[i] - p[i], 2);
   }
 
