@@ -3,9 +3,9 @@
 #include <gtest/gtest.h>
 #include <mpi.h>
 
+#include <gtest-mpi-listener.hpp>
 #include <cmath>
 #include <vector>
-#include <gtest-mpi-listener.hpp>
 
 #include "./seidel.h"
 
