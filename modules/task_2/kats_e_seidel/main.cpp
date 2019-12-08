@@ -4,74 +4,128 @@
 #include <mpi.h>
 
 #include <gtest-mpi-listener.hpp>
-#include <cmath>
 #include <vector>
+#include <cmath>
 
 #include "./seidel.h"
 
-TEST(SEIDEL_METHOD, SLAE_SIZE_4) {
+TEST(SEIDEL_METHOD, SLAE_SIZE_3) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  int size = 3;
 
-  std::vector<double> A(4 * 4);
-  std::vector<double> B(4);
+  std::vector<double> A;
+  std::vector<double> B;
+
   if (rank == 0) {
-    A = randMatrix(4, TYPE_A);
-    B = randMatrix(4, TYPE_B);
+    A = randMatrix(size, TYPE_A);
+    B = randMatrix(size, TYPE_B);
+  } else {
+    A.resize(size * size);
+    B.resize(size);
   }
-  MPI_Bcast(&A[0], 4 * 4, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&B[0], 4, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&A[0], size * size, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&B[0], size, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-  std::vector<double> x(seidel_solve(A, B, 4, 1e-6));
+  std::vector<double> x(seidel_solve(A, B, size, .001));
 
   if (rank == 0) {
-    std::vector<double> exp(seidel_solve_s(A, B, 4, 1e-6));
+    double sum = 0.0;
+    for (int i = 0; i < size; i++) {
+      sum += A[i] * x[i];
+    }
 
-    ASSERT_EQ(norm(x, exp, 1e-5), true);
+    ASSERT_LE(std::round(sum) - B[0], 0);
   }
 }
 
-TEST(SEIDEL_METHOD, SLAE_SIZE_20) {
+TEST(SEIDEL_METHOD, SLAE_SIZE_5) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  int size = 5;
 
-  std::vector<double> A(20 * 20);
-  std::vector<double> B(20);
+  std::vector<double> A;
+  std::vector<double> B;
+
   if (rank == 0) {
-    A = randMatrix(20, TYPE_A);
-    B = randMatrix(20, TYPE_B);
+    A = randMatrix(size, TYPE_A);
+    B = randMatrix(size, TYPE_B);
+  } else {
+    A.resize(size * size);
+    B.resize(size);
   }
-  MPI_Bcast(&A[0], 20 * 20, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&B[0], 20, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&A[0], size * size, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&B[0], size, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-  std::vector<double> x(seidel_solve(A, B, 20, 1e-6));
+  std::vector<double> x(seidel_solve(A, B, size, 1e-7));
 
   if (rank == 0) {
-    std::vector<double> exp(seidel_solve_s(A, B, 20, 1e-6));
+    double sum = 0.0;
+    for (int i = 0; i < size; i++) {
+      sum += A[i] * x[i];
+    }
 
-    ASSERT_EQ(norm(x, exp, 1e-5), true);
+    ASSERT_LE(std::round(sum) - B[0], 0);
   }
 }
 
-TEST(SEIDEL_METHOD, SLAE_SIZE_600) {
+TEST(SEIDEL_METHOD, SLAE_SIZE_10) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  int size = 10;
 
-  std::vector<double> A(600 * 600);
-  std::vector<double> B(600);
+  std::vector<double> A;
+  std::vector<double> B;
+
   if (rank == 0) {
-    A = randMatrix(600, TYPE_A);
-    B = randMatrix(600, TYPE_B);
+    A = randMatrix(size, TYPE_A);
+    B = randMatrix(size, TYPE_B);
+  } else {
+    A.resize(size * size);
+    B.resize(size);
   }
-  MPI_Bcast(&A[0], 600 * 600, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&B[0], 600, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&A[0], size * size, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&B[0], size, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-  std::vector<double> x(seidel_solve(A, B, 600, 1e-6));
+  std::vector<double> x(seidel_solve(A, B, size, 1e-7));
 
   if (rank == 0) {
-    std::vector<double> exp(seidel_solve_s(A, B, 600, 1e-6));
+    double sum = 0.0;
+    for (int i = 0; i < size; i++) {
+      sum += A[i] * x[i];
+    }
 
-    ASSERT_EQ(norm(x, exp, 1e-5), true);
+    ASSERT_LE(std::round(sum) - B[0], 0);
+  }
+}
+
+TEST(SEIDEL_METHOD, SLAE_SIZE_50) {
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  int size = 50;
+
+  std::vector<double> A;
+  std::vector<double> B;
+
+  if (rank == 0) {
+    A = randMatrix(size, TYPE_A);
+    B = randMatrix(size, TYPE_B);
+  } else {
+    A.resize(size * size);
+    B.resize(size);
+  }
+  MPI_Bcast(&A[0], size * size, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&B[0], size, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+  std::vector<double> x(seidel_solve(A, B, size, 1e-7));
+
+  if (rank == 0) {
+    double sum = 0.0;
+    for (int i = 0; i < size; i++) {
+      sum += A[i] * x[i];
+    }
+
+    ASSERT_LE(std::round(sum) - B[0], 0);
   }
 }
 
@@ -81,7 +135,7 @@ TEST(SEIDEL_METHOD, SOLVE_PARLL) {
 
   std::vector<double> A{2, 1, 1, 3, 5, 2, 2, 1, 4};
   std::vector<double> B{5, 15, 8};
-  std::vector<double> x(seidel_solve(A, B, 3, 1e-6));
+  std::vector<double> x(seidel_solve(A, B, 3, .001));
 
   if (rank == 0) {
     std::vector<double> exp{1, 2, 1};
@@ -100,7 +154,7 @@ TEST(SEIDEL_METHOD, SOLVE_SEQ) {
   if (rank == 0) {
     std::vector<double> A{2, 1, 1, 3, 5, 2, 2, 1, 4};
     std::vector<double> B{5, 15, 8};
-    std::vector<double> x(seidel_solve_s(A, B, 3, 1e-6));
+    std::vector<double> x(seidel_solve_s(A, B, 3, .001));
     std::vector<double> exp{1, 2, 1};
 
     for (auto&& elem : x) {

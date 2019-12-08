@@ -42,16 +42,6 @@ std::vector<double> randMatrix(int n, int type) {
   return result;
 }
 
-bool norm(std::vector<double> x, std::vector<double> p, double eps) {
-  double norm = 0.0;
-
-  for (int i = 0; i < (signed)x.size(); i++) {
-    norm += std::pow(x[i] - p[i], 2);
-  }
-
-  return std::sqrt(norm) < eps;
-}
-
 std::vector<double> seidel_solve(std::vector<double> A, std::vector<double> B,
                                  int n, double eps) {
   if (n < 0) {
@@ -73,12 +63,11 @@ std::vector<double> seidel_solve(std::vector<double> A, std::vector<double> B,
     rightBound = n;
   }
 
-  double localSum = 0, globalSum = 0;
+  double localSum = 0.0, globalSum = 0.0, norm = 0.0;
 
   std::vector<double> x(n);
   std::vector<double> p(n);
 
-  bool check;
   do {
     for (int i = 0; i < n; i++) {
       p[i] = x[i];
@@ -87,36 +76,29 @@ std::vector<double> seidel_solve(std::vector<double> A, std::vector<double> B,
     for (int i = 0; i < n; i++) {
       localSum = 0.0;
       globalSum = 0.0;
+      double coef;
 
-      for (int j = 0; j < i; j++) {
-        if ((leftBound <= j) && (j < rightBound)) {
+      for (int j = leftBound; j < rightBound; j++) {
+        if ((0 <= j) && (j < i)) {
           localSum += (A[i * n + j] * x[j]);
-        }
-      }
-
-      for (int j = i + 1; j < n; j++) {
-        if ((leftBound <= j) && (j < rightBound)) {
+        } else if ((i + 1 <= j) && (j < n)) {
           localSum += (A[i * n + j] * p[j]);
         }
       }
 
-      MPI_Barrier(MPI_COMM_WORLD);
-      MPI_Reduce(&localSum, &globalSum, 1, MPI_DOUBLE, MPI_SUM, 0,
-                 MPI_COMM_WORLD);
+      MPI_Allreduce(&localSum, &globalSum, 1, MPI_DOUBLE, MPI_SUM,
+                    MPI_COMM_WORLD);
 
-      if (rank == 0) {
-        x[i] = (B[i] - globalSum) / A[i * n + i];
-      }
+      x[i] = (B[i] - globalSum) / A[i * n + i];
     }
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Bcast(&x[0], n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-    if (rank == 0) {
-      check = !norm(x, p, eps);
+    double local_norm = 0.0;
+    norm = 0.0;
+    for (int i = leftBound; i < rightBound; i++) {
+      local_norm += std::pow(x[i] - p[i], 2);
     }
-    MPI_Bcast(&check, 1, MPI_C_BOOL, 0, MPI_COMM_WORLD);
-  } while (check);
+    MPI_Allreduce(&local_norm, &norm, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  } while (!(std::sqrt(norm) < eps));
 
   return x;
 }
@@ -130,6 +112,7 @@ std::vector<double> seidel_solve_s(std::vector<double> A, std::vector<double> B,
   std::vector<double> x(n);
   std::vector<double> p(n);
 
+  double norm = 0;
   do {
     for (int i = 0; i < n; i++) {
       p[i] = x[i];
@@ -148,7 +131,12 @@ std::vector<double> seidel_solve_s(std::vector<double> A, std::vector<double> B,
 
       x[i] = (B[i] - var) / A[i * n + i];
     }
-  } while (!norm(x, p, eps));
+
+    norm = 0;
+    for (int i = 0; i < n; i++) {
+      norm += std::pow(x[i] - p[i], 2);
+    }
+  } while (!(std::sqrt(norm) < eps));
 
   return x;
 }
