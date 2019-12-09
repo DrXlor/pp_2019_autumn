@@ -76,7 +76,6 @@ std::vector<double> seidel_solve(std::vector<double> A, std::vector<double> B,
     for (int i = 0; i < n; i++) {
       localSum = 0.0;
       globalSum = 0.0;
-      double coef;
 
       for (int j = leftBound; j < rightBound; j++) {
         if ((0 <= j) && (j < i)) {
